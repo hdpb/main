@@ -185,7 +185,7 @@ const loadPreview = async (file, previewElement, statusElement) => {
   previewElement.innerHTML = "";
   if (!file) {
     previewElement.textContent = "No file loaded yet.";
-    return;
+    return { canvas: null, pdfAttempted: false };
   }
 
   if (isPdfFile(file)) {
@@ -198,7 +198,7 @@ const loadPreview = async (file, previewElement, statusElement) => {
       if (canvas) {
         previewElement.innerHTML = "";
         previewElement.appendChild(canvas);
-        return canvas;
+        return { canvas, pdfAttempted: true };
       }
     } catch (error) {
       console.error(error);
@@ -208,14 +208,14 @@ const loadPreview = async (file, previewElement, statusElement) => {
         "PDF preview failed. If you opened this via file://, use a local server."
       );
     }
-    return;
+    return { canvas: null, pdfAttempted: true };
   }
 
   const img = document.createElement("img");
   img.src = URL.createObjectURL(file);
   img.onload = () => URL.revokeObjectURL(img.src);
   previewElement.appendChild(img);
-  return null;
+  return { canvas: null, pdfAttempted: false };
 };
 
 const extractPartNumbers = (text) => {
@@ -241,12 +241,28 @@ const extractPartNumbers = (text) => {
 const handleFile = async (file, slot) => {
   if (slot === "A") {
     currentFileA = file;
-    pdfCanvasA = await loadPreview(file, previewA, statusA);
-    setStatus(statusA, "Ready to scan drawing A.");
+    const result = await loadPreview(file, previewA, statusA);
+    pdfCanvasA = result.canvas;
+    if (result.pdfAttempted && !result.canvas) {
+      setStatus(
+        statusA,
+        "PDF loaded, but preview is unavailable. Check network access or try a local server."
+      );
+    } else {
+      setStatus(statusA, "Ready to scan drawing A.");
+    }
   } else {
     currentFileB = file;
-    pdfCanvasB = await loadPreview(file, previewB, statusB);
-    setStatus(statusB, "Ready to scan drawing B.");
+    const result = await loadPreview(file, previewB, statusB);
+    pdfCanvasB = result.canvas;
+    if (result.pdfAttempted && !result.canvas) {
+      setStatus(
+        statusB,
+        "PDF loaded, but preview is unavailable. Check network access or try a local server."
+      );
+    } else {
+      setStatus(statusB, "Ready to scan drawing B.");
+    }
   }
 };
 
@@ -325,11 +341,12 @@ const runScan = async (slot) => {
     if (isPdfFile(currentFile)) {
       let pdfCanvas = isA ? pdfCanvasA : pdfCanvasB;
       if (!pdfCanvas) {
-        pdfCanvas = await loadPreview(currentFile, previewElement, statusElement);
+        const result = await loadPreview(currentFile, previewElement, statusElement);
+        pdfCanvas = result.canvas;
         if (isA) {
-          pdfCanvasA = pdfCanvas;
+          pdfCanvasA = result.canvas;
         } else {
-          pdfCanvasB = pdfCanvas;
+          pdfCanvasB = result.canvas;
         }
       }
       if (pdfCanvas) {
