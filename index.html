@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Drawing Part Number Scanner</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/build/pdf.min.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <p class="eyebrow">Engineering Drawing OCR</p>
+        <h1>Scan drawings and extract part numbers.</h1>
+        <p class="subhead">
+          Upload a PDF or image of a drawing, run OCR in your browser, and build a clean
+          list of detected part numbers.
+        </p>
+      </header>
+
+      <section class="panel">
+        <div class="upload-area" id="drop-zone">
+          <div>
+            <h2>1) Add a drawing</h2>
+            <p>Drag and drop a file, or click to upload.</p>
+          </div>
+          <input id="file-input" type="file" accept="image/*,.pdf" />
+        </div>
+
+        <div class="preview-area">
+          <div class="preview-card">
+            <h3>Preview</h3>
+            <div class="preview" id="preview">
+              <p>No file loaded yet.</p>
+            </div>
+          </div>
+          <div class="preview-card">
+            <h3>Extracted part numbers</h3>
+            <div class="results">
+              <ul id="part-list"></ul>
+              <p class="placeholder" id="empty-state">
+                Run OCR to see detected part numbers here.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div>
+            <label for="pattern">Part number pattern</label>
+            <input
+              id="pattern"
+              type="text"
+              value="(?:PN|P/N|PART\s*NO\.?|PART\s*NUMBER)\s*[:#-]*\s*([A-Z0-9][A-Z0-9-]{3,})"
+            />
+            <p class="help">Use a custom regex capture group if your drawings use a different format.</p>
+          </div>
+          <button id="scan-button">Run OCR Scan</button>
+        </div>
+        <div class="status" id="status">Waiting for a drawing.</div>
+      </section>
+
+      <section class="panel">
+        <h2>2) Review and export</h2>
+        <p>
+          We deduplicate part numbers automatically. Click “Copy list” to share with your
+          planning team.
+        </p>
+        <div class="actions">
+          <button id="copy-button" class="secondary">Copy list</button>
+          <button id="clear-button" class="ghost">Clear</button>
+        </div>
+        <textarea id="export" readonly placeholder="Part numbers will appear here..."></textarea>
+      </section>
+    </div>
+  </body>
+</html>
