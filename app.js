@@ -227,12 +227,13 @@ const loadPreview = async (file, previewElement, statusElement, slot) => {
         previewElement.appendChild(canvas);
         return { canvas, pdfAttempted: true };
       }
+      placeholder.remove();
     } catch (error) {
       console.error(error);
-      previewElement.textContent = "Unable to render PDF preview.";
+      placeholder.remove();
       setStatus(
         statusElement,
-        "PDF preview failed. If you opened this via file://, use a local server."
+        "PDF preview failed. Embedded preview shown; OCR requires PDF.js."
       );
     }
     return { canvas: null, pdfAttempted: true };
@@ -245,12 +246,12 @@ const loadPreview = async (file, previewElement, statusElement, slot) => {
   return { canvas: null, pdfAttempted: false };
 };
 
-const extractPartNumbers = (text) => {
+const extractPartNumbers = (text, statusElement) => {
   let pattern;
   try {
     pattern = new RegExp(patternInput.value, "gi");
   } catch (error) {
-    setStatus("Regex pattern error. Please correct the pattern.");
+    setStatus(statusElement, "Regex pattern error. Please correct the pattern.");
     return [];
   }
 
@@ -402,7 +403,7 @@ const runScan = async (slot) => {
       },
     });
 
-    const matches = extractPartNumbers(result.data.text || "");
+    const matches = extractPartNumbers(result.data.text || "", statusElement);
     const setToUpdate = isA ? partNumbersA : partNumbersB;
     matches.forEach((item) => setToUpdate.add(item));
     updateList(listElement, emptyElement, exportElement, setToUpdate);
