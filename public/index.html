@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rightmove Property Scanner</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="page__header">
+        <h1>Rightmove Property Scanner</h1>
+        <p>
+          Scan Rightmove listings against your criteria and review the matches in
+          one place.
+        </p>
+      </header>
+
+      <main>
+        <section class="card">
+          <form id="search-form" class="search-form">
+            <div class="form-grid">
+              <!-- Adjust the default location value here if you want a different starting point. -->
+              <label>
+                Location
+                <input
+                  type="text"
+                  name="location"
+                  placeholder="Southend-on-Sea"
+                  value="Southend-on-Sea"
+                  required
+                />
+              </label>
+              <!-- Adjust the default price range by setting placeholder or value attributes. -->
+              <label>
+                Min price
+                <input type="number" name="minPrice" placeholder="100000" />
+              </label>
+              <label>
+                Max price
+                <input type="number" name="maxPrice" placeholder="400000" />
+              </label>
+              <label>
+                Min beds
+                <input type="number" name="minBeds" placeholder="2" />
+              </label>
+              <label>
+                Max beds
+                <input type="number" name="maxBeds" placeholder="4" />
+              </label>
+              <label>
+                Keywords
+                <input
+                  type="text"
+                  name="keywords"
+                  placeholder="garage, sea view, balcony"
+                />
+              </label>
+              <label>
+                Exclude words
+                <input
+                  type="text"
+                  name="excludeWords"
+                  placeholder="basement, shared ownership"
+                />
+              </label>
+            </div>
+            <button type="submit" class="button">Scan Properties</button>
+          </form>
+        </section>
+
+        <section class="card results-meta">
+          <div>
+            <h2>Actual Rightmove search URL used</h2>
+            <textarea id="search-url" readonly rows="2">
+              Submit a scan to see the URL here.
+            </textarea>
+          </div>
+          <div class="summary-row">
+            <p id="results-summary">Showing 0 matching properties</p>
+            <span id="loading" class="status status--hidden">Scanning...</span>
+            <span id="error" class="status status--error"></span>
+          </div>
+        </section>
+
+        <section>
+          <div id="results" class="results-grid"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
