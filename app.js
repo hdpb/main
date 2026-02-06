@@ -23,6 +23,9 @@ const onlyBList = document.getElementById("only-b-list");
 const emptyShared = document.getElementById("empty-shared");
 const emptyOnlyA = document.getElementById("empty-only-a");
 const emptyOnlyB = document.getElementById("empty-only-b");
+const ocrTextA = document.getElementById("ocr-text-a");
+const ocrTextB = document.getElementById("ocr-text-b");
+const tightOcrToggle = document.getElementById("tight-ocr");
 const patternInput = document.getElementById("pattern");
 
 let currentFileA = null;
@@ -266,6 +269,16 @@ const extractPartNumbers = (text, statusElement) => {
   return matches;
 };
 
+const buildOcrOptions = () => {
+  const options = {
+    preserve_interword_spaces: "1",
+  };
+  if (tightOcrToggle?.checked) {
+    options.tessedit_char_whitelist = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-";
+  }
+  return options;
+};
+
 const handleFile = async (file, slot) => {
   if (slot === "A") {
     currentFileA = file;
@@ -401,9 +414,16 @@ const runScan = async (slot) => {
           );
         }
       },
+      ...buildOcrOptions(),
     });
 
-    const matches = extractPartNumbers(result.data.text || "", statusElement);
+    const rawText = result.data.text || "";
+    if (isA) {
+      ocrTextA.value = rawText.trim();
+    } else {
+      ocrTextB.value = rawText.trim();
+    }
+    const matches = extractPartNumbers(rawText, statusElement);
     const setToUpdate = isA ? partNumbersA : partNumbersB;
     matches.forEach((item) => setToUpdate.add(item));
     updateList(listElement, emptyElement, exportElement, setToUpdate);
@@ -451,6 +471,8 @@ clearButton.addEventListener("click", () => {
   pdfCanvasB = null;
   previewA.innerHTML = "<p>No file loaded yet.</p>";
   previewB.innerHTML = "<p>No file loaded yet.</p>";
+  ocrTextA.value = "";
+  ocrTextB.value = "";
   clearPreviewBlob("A");
   clearPreviewBlob("B");
   updateList(partListA, emptyStateA, exportA, partNumbersA);
