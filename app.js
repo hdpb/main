@@ -14,10 +14,49 @@ let currentFile = null;
 let partNumbers = new Set();
 let pdfCanvas = null;
 
-if (window.pdfjsLib) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/build/pdf.worker.min.js";
-}
+const pdfJsSources = [
+  "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/build/pdf.min.js",
+  "https://unpkg.com/pdfjs-dist@4.2.67/build/pdf.min.js",
+];
+
+const pdfWorkerSources = [
+  "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/build/pdf.worker.min.js",
+  "https://unpkg.com/pdfjs-dist@4.2.67/build/pdf.worker.min.js",
+];
+
+const loadScript = (src) =>
+  new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(script);
+  });
+
+const ensurePdfJsLoaded = async () => {
+  if (window.pdfjsLib) {
+    return true;
+  }
+
+  for (const src of pdfJsSources) {
+    try {
+      await loadScript(src);
+      if (window.pdfjsLib) {
+        break;
+      }
+    } catch (error) {
+      console.warn(error);
+    }
+  }
+
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSources[0];
+    return true;
+  }
+
+  return false;
+};
 
 const setStatus = (message) => {
   statusEl.textContent = message;
@@ -43,7 +82,8 @@ const isPdfFile = (file) =>
   file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 
 const renderPdfPreview = async (file) => {
-  if (!window.pdfjsLib) {
+  const pdfReady = await ensurePdfJsLoaded();
+  if (!pdfReady || !window.pdfjsLib) {
     preview.textContent = "PDF preview unavailable. PDF.js failed to load.";
     return null;
   }
@@ -53,6 +93,9 @@ const renderPdfPreview = async (file) => {
   try {
     pdf = await pdfjsLib.getDocument({ data }).promise;
   } catch (error) {
+    if (pdfjsLib?.GlobalWorkerOptions) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSources[1];
+    }
     pdf = await pdfjsLib.getDocument({ data, disableWorker: true }).promise;
   }
   const page = await pdf.getPage(1);
