@@ -153,10 +153,11 @@ const updateComparison = () => {
 const isPdfFile = (file) =>
   file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 
-const renderPdfPreview = async (file, previewElement) => {
+const renderPdfPreview = async (file, previewElement, statusElement) => {
   const pdfReady = await ensurePdfJsLoaded();
   if (!pdfReady || !window.pdfjsLib) {
     previewElement.textContent = "PDF preview unavailable. PDF.js failed to load.";
+    setStatus(statusElement, "PDF.js failed to load. Please check your network access.");
     return null;
   }
 
@@ -193,7 +194,7 @@ const loadPreview = async (file, previewElement, statusElement) => {
     placeholder.textContent = "Rendering PDF preview...";
     previewElement.appendChild(placeholder);
     try {
-      const canvas = await renderPdfPreview(file, previewElement);
+      const canvas = await renderPdfPreview(file, previewElement, statusElement);
       if (canvas) {
         previewElement.innerHTML = "";
         previewElement.appendChild(canvas);
