@@ -21,33 +21,88 @@
       </header>
 
       <section class="panel">
-        <div class="upload-area" id="drop-zone">
-          <div>
-            <h2>1) Add a drawing</h2>
-            <p>Drag and drop a file, or click to upload.</p>
+        <h2>1) Add drawings</h2>
+        <p>Upload two drawings to compare part numbers across revisions or vendor packages.</p>
+
+        <div class="upload-grid">
+          <div class="upload-column">
+            <div class="upload-area" id="drop-zone-a">
+              <div>
+                <h3>Drawing A</h3>
+                <p>Drag and drop a file, or click to upload.</p>
+              </div>
+              <input id="file-input-a" type="file" accept="image/*,.pdf" />
+            </div>
+
+            <div class="preview-area">
+              <div class="preview-card">
+                <h4>Preview</h4>
+                <div class="preview" id="preview-a">
+                  <p>No file loaded yet.</p>
+                </div>
+              </div>
+              <div class="preview-card">
+                <h4>Extracted part numbers</h4>
+                <div class="results">
+                  <ul id="part-list-a"></ul>
+                  <p class="placeholder" id="empty-state-a">
+                    Run OCR to see detected part numbers here.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="controls">
+              <button id="scan-button-a">Run OCR Scan A</button>
+              <div class="status" id="status-a">Waiting for drawing A.</div>
+            </div>
+            <textarea
+              id="export-a"
+              readonly
+              placeholder="Part numbers for drawing A..."
+            ></textarea>
           </div>
-          <input id="file-input" type="file" accept="image/*,.pdf" />
+
+          <div class="upload-column">
+            <div class="upload-area" id="drop-zone-b">
+              <div>
+                <h3>Drawing B</h3>
+                <p>Drag and drop a file, or click to upload.</p>
+              </div>
+              <input id="file-input-b" type="file" accept="image/*,.pdf" />
+            </div>
+
+            <div class="preview-area">
+              <div class="preview-card">
+                <h4>Preview</h4>
+                <div class="preview" id="preview-b">
+                  <p>No file loaded yet.</p>
+                </div>
+              </div>
+              <div class="preview-card">
+                <h4>Extracted part numbers</h4>
+                <div class="results">
+                  <ul id="part-list-b"></ul>
+                  <p class="placeholder" id="empty-state-b">
+                    Run OCR to see detected part numbers here.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="controls">
+              <button id="scan-button-b">Run OCR Scan B</button>
+              <div class="status" id="status-b">Waiting for drawing B.</div>
+            </div>
+            <textarea
+              id="export-b"
+              readonly
+              placeholder="Part numbers for drawing B..."
+            ></textarea>
+          </div>
         </div>
 
-        <div class="preview-area">
-          <div class="preview-card">
-            <h3>Preview</h3>
-            <div class="preview" id="preview">
-              <p>No file loaded yet.</p>
-            </div>
-          </div>
-          <div class="preview-card">
-            <h3>Extracted part numbers</h3>
-            <div class="results">
-              <ul id="part-list"></ul>
-              <p class="placeholder" id="empty-state">
-                Run OCR to see detected part numbers here.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="controls">
+        <div class="controls pattern-controls">
           <div>
             <label for="pattern">Part number pattern</label>
             <input
@@ -57,22 +112,43 @@
             />
             <p class="help">Use a custom regex capture group if your drawings use a different format.</p>
           </div>
-          <button id="scan-button">Run OCR Scan</button>
         </div>
-        <div class="status" id="status">Waiting for a drawing.</div>
       </section>
 
       <section class="panel">
-        <h2>2) Review and export</h2>
+        <h2>2) Compare part lists</h2>
         <p>
-          We deduplicate part numbers automatically. Click “Copy list” to share with your
-          planning team.
+          We deduplicate part numbers automatically and compare lists from drawing A and B.
         </p>
-        <div class="actions">
-          <button id="copy-button" class="secondary">Copy list</button>
-          <button id="clear-button" class="ghost">Clear</button>
+        <div class="comparison-grid">
+          <div class="preview-card">
+            <h4>Shared parts</h4>
+            <div class="results">
+              <ul id="shared-list"></ul>
+              <p class="placeholder" id="empty-shared">No shared parts yet.</p>
+            </div>
+          </div>
+          <div class="preview-card">
+            <h4>Only in A</h4>
+            <div class="results">
+              <ul id="only-a-list"></ul>
+              <p class="placeholder" id="empty-only-a">No A-only parts yet.</p>
+            </div>
+          </div>
+          <div class="preview-card">
+            <h4>Only in B</h4>
+            <div class="results">
+              <ul id="only-b-list"></ul>
+              <p class="placeholder" id="empty-only-b">No B-only parts yet.</p>
+            </div>
+          </div>
         </div>
-        <textarea id="export" readonly placeholder="Part numbers will appear here..."></textarea>
+
+        <div class="actions">
+          <button id="copy-button" class="secondary">Copy comparison</button>
+          <button id="clear-button" class="ghost">Clear all</button>
+        </div>
+        <textarea id="export" readonly placeholder="Comparison summary will appear here..."></textarea>
       </section>
     </div>
   </body>

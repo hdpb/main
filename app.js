@@ -1,18 +1,36 @@
-const fileInput = document.getElementById("file-input");
-const preview = document.getElementById("preview");
-const scanButton = document.getElementById("scan-button");
-const statusEl = document.getElementById("status");
-const partList = document.getElementById("part-list");
-const emptyState = document.getElementById("empty-state");
-const exportArea = document.getElementById("export");
+const fileInputA = document.getElementById("file-input-a");
+const fileInputB = document.getElementById("file-input-b");
+const previewA = document.getElementById("preview-a");
+const previewB = document.getElementById("preview-b");
+const scanButtonA = document.getElementById("scan-button-a");
+const scanButtonB = document.getElementById("scan-button-b");
+const statusA = document.getElementById("status-a");
+const statusB = document.getElementById("status-b");
+const partListA = document.getElementById("part-list-a");
+const partListB = document.getElementById("part-list-b");
+const emptyStateA = document.getElementById("empty-state-a");
+const emptyStateB = document.getElementById("empty-state-b");
+const exportA = document.getElementById("export-a");
+const exportB = document.getElementById("export-b");
+const comparisonExport = document.getElementById("export");
 const copyButton = document.getElementById("copy-button");
 const clearButton = document.getElementById("clear-button");
-const dropZone = document.getElementById("drop-zone");
+const dropZoneA = document.getElementById("drop-zone-a");
+const dropZoneB = document.getElementById("drop-zone-b");
+const sharedList = document.getElementById("shared-list");
+const onlyAList = document.getElementById("only-a-list");
+const onlyBList = document.getElementById("only-b-list");
+const emptyShared = document.getElementById("empty-shared");
+const emptyOnlyA = document.getElementById("empty-only-a");
+const emptyOnlyB = document.getElementById("empty-only-b");
 const patternInput = document.getElementById("pattern");
 
-let currentFile = null;
-let partNumbers = new Set();
-let pdfCanvas = null;
+let currentFileA = null;
+let currentFileB = null;
+let partNumbersA = new Set();
+let partNumbersB = new Set();
+let pdfCanvasA = null;
+let pdfCanvasB = null;
 
 const pdfJsSources = [
   "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/build/pdf.min.js",
@@ -60,33 +78,85 @@ const ensurePdfJsLoaded = async () => {
   return false;
 };
 
-const setStatus = (message) => {
-  statusEl.textContent = message;
+const setStatus = (element, message) => {
+  element.textContent = message;
 };
 
-const updateList = () => {
-  partList.innerHTML = "";
-  const items = Array.from(partNumbers).sort();
+const updateList = (listElement, emptyElement, exportElement, itemsSet) => {
+  listElement.innerHTML = "";
+  const items = Array.from(itemsSet).sort();
   if (items.length === 0) {
-    emptyState.style.display = "block";
+    emptyElement.style.display = "block";
   } else {
-    emptyState.style.display = "none";
+    emptyElement.style.display = "none";
     items.forEach((item) => {
       const li = document.createElement("li");
       li.textContent = item;
-      partList.appendChild(li);
+      listElement.appendChild(li);
     });
   }
-  exportArea.value = items.join("\n");
+  exportElement.value = items.join("\n");
+};
+
+const updateComparison = () => {
+  sharedList.innerHTML = "";
+  onlyAList.innerHTML = "";
+  onlyBList.innerHTML = "";
+
+  const shared = [];
+  const onlyA = [];
+  const onlyB = [];
+
+  partNumbersA.forEach((item) => {
+    if (partNumbersB.has(item)) {
+      shared.push(item);
+    } else {
+      onlyA.push(item);
+    }
+  });
+  partNumbersB.forEach((item) => {
+    if (!partNumbersA.has(item)) {
+      onlyB.push(item);
+    }
+  });
+
+  const render = (items, listEl, emptyEl) => {
+    if (items.length === 0) {
+      emptyEl.style.display = "block";
+    } else {
+      emptyEl.style.display = "none";
+      items.sort().forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        listEl.appendChild(li);
+      });
+    }
+  };
+
+  render(shared, sharedList, emptyShared);
+  render(onlyA, onlyAList, emptyOnlyA);
+  render(onlyB, onlyBList, emptyOnlyB);
+
+  const lines = [
+    "Shared parts:",
+    ...shared.sort().map((item) => `  - ${item}`),
+    "",
+    "Only in A:",
+    ...onlyA.sort().map((item) => `  - ${item}`),
+    "",
+    "Only in B:",
+    ...onlyB.sort().map((item) => `  - ${item}`),
+  ];
+  comparisonExport.value = lines.join("\n").trim();
 };
 
 const isPdfFile = (file) =>
   file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 
-const renderPdfPreview = async (file) => {
+const renderPdfPreview = async (file, previewElement) => {
   const pdfReady = await ensurePdfJsLoaded();
   if (!pdfReady || !window.pdfjsLib) {
-    preview.textContent = "PDF preview unavailable. PDF.js failed to load.";
+    previewElement.textContent = "PDF preview unavailable. PDF.js failed to load.";
     return null;
   }
 
@@ -110,10 +180,10 @@ const renderPdfPreview = async (file) => {
   return canvas;
 };
 
-const loadPreview = async (file) => {
-  preview.innerHTML = "";
+const loadPreview = async (file, previewElement, statusElement) => {
+  previewElement.innerHTML = "";
   if (!file) {
-    preview.textContent = "No file loaded yet.";
+    previewElement.textContent = "No file loaded yet.";
     return;
   }
 
@@ -121,18 +191,21 @@ const loadPreview = async (file) => {
     const placeholder = document.createElement("div");
     placeholder.className = "placeholder";
     placeholder.textContent = "Rendering PDF preview...";
-    preview.appendChild(placeholder);
+    previewElement.appendChild(placeholder);
     try {
-      const canvas = await renderPdfPreview(file);
+      const canvas = await renderPdfPreview(file, previewElement);
       if (canvas) {
-        preview.innerHTML = "";
-        preview.appendChild(canvas);
-        pdfCanvas = canvas;
+        previewElement.innerHTML = "";
+        previewElement.appendChild(canvas);
+        return canvas;
       }
     } catch (error) {
       console.error(error);
-      preview.textContent = "Unable to render PDF preview.";
-      setStatus("PDF preview failed. If you opened this via file://, use a local server.");
+      previewElement.textContent = "Unable to render PDF preview.";
+      setStatus(
+        statusElement,
+        "PDF preview failed. If you opened this via file://, use a local server."
+      );
     }
     return;
   }
@@ -140,7 +213,8 @@ const loadPreview = async (file) => {
   const img = document.createElement("img");
   img.src = URL.createObjectURL(file);
   img.onload = () => URL.revokeObjectURL(img.src);
-  preview.appendChild(img);
+  previewElement.appendChild(img);
+  return null;
 };
 
 const extractPartNumbers = (text) => {
@@ -163,56 +237,99 @@ const extractPartNumbers = (text) => {
   return matches;
 };
 
-const handleFile = (file) => {
-  currentFile = file;
-  pdfCanvas = null;
-  loadPreview(file);
-  setStatus("Ready to scan.");
+const handleFile = async (file, slot) => {
+  if (slot === "A") {
+    currentFileA = file;
+    pdfCanvasA = await loadPreview(file, previewA, statusA);
+    setStatus(statusA, "Ready to scan drawing A.");
+  } else {
+    currentFileB = file;
+    pdfCanvasB = await loadPreview(file, previewB, statusB);
+    setStatus(statusB, "Ready to scan drawing B.");
+  }
 };
 
-fileInput.addEventListener("change", (event) => {
+fileInputA.addEventListener("change", (event) => {
   const file = event.target.files[0];
   if (file) {
-    handleFile(file);
+    handleFile(file, "A");
+  }
+});
+
+fileInputB.addEventListener("change", (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    handleFile(file, "B");
   }
 });
 
 ["dragenter", "dragover"].forEach((eventName) => {
-  dropZone.addEventListener(eventName, (event) => {
+  dropZoneA.addEventListener(eventName, (event) => {
     event.preventDefault();
-    dropZone.classList.add("dragover");
+    dropZoneA.classList.add("dragover");
+  });
+  dropZoneB.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    dropZoneB.classList.add("dragover");
   });
 });
 
 ["dragleave", "drop"].forEach((eventName) => {
-  dropZone.addEventListener(eventName, (event) => {
+  dropZoneA.addEventListener(eventName, (event) => {
     event.preventDefault();
-    dropZone.classList.remove("dragover");
+    dropZoneA.classList.remove("dragover");
+  });
+  dropZoneB.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    dropZoneB.classList.remove("dragover");
   });
 });
 
-dropZone.addEventListener("drop", (event) => {
+dropZoneA.addEventListener("drop", (event) => {
   const file = event.dataTransfer.files[0];
   if (file) {
-    fileInput.files = event.dataTransfer.files;
-    handleFile(file);
+    fileInputA.files = event.dataTransfer.files;
+    handleFile(file, "A");
   }
 });
 
-scanButton.addEventListener("click", async () => {
+dropZoneB.addEventListener("drop", (event) => {
+  const file = event.dataTransfer.files[0];
+  if (file) {
+    fileInputB.files = event.dataTransfer.files;
+    handleFile(file, "B");
+  }
+});
+
+const runScan = async (slot) => {
+  const isA = slot === "A";
+  const currentFile = isA ? currentFileA : currentFileB;
+  const statusElement = isA ? statusA : statusB;
+  const scanButton = isA ? scanButtonA : scanButtonB;
+  const previewElement = isA ? previewA : previewB;
+  const listElement = isA ? partListA : partListB;
+  const emptyElement = isA ? emptyStateA : emptyStateB;
+  const exportElement = isA ? exportA : exportB;
+
   if (!currentFile) {
-    setStatus("Upload a drawing first.");
+    setStatus(statusElement, "Upload a drawing first.");
     return;
   }
 
-  setStatus("Running OCR... this can take a minute for large drawings.");
+  setStatus(statusElement, "Running OCR... this can take a minute for large drawings.");
   scanButton.disabled = true;
 
   try {
     let source = currentFile;
     if (isPdfFile(currentFile)) {
+      let pdfCanvas = isA ? pdfCanvasA : pdfCanvasB;
       if (!pdfCanvas) {
-        pdfCanvas = await renderPdfPreview(currentFile);
+        pdfCanvas = await loadPreview(currentFile, previewElement, statusElement);
+        if (isA) {
+          pdfCanvasA = pdfCanvas;
+        } else {
+          pdfCanvasB = pdfCanvas;
+        }
       }
       if (pdfCanvas) {
         source = pdfCanvas;
@@ -222,45 +339,69 @@ scanButton.addEventListener("click", async () => {
     const result = await Tesseract.recognize(source, "eng", {
       logger: (message) => {
         if (message.status && message.progress !== undefined) {
-          setStatus(`${message.status} ${(message.progress * 100).toFixed(0)}%`);
+          setStatus(
+            statusElement,
+            `${message.status} ${(message.progress * 100).toFixed(0)}%`
+          );
         }
       },
     });
 
     const matches = extractPartNumbers(result.data.text || "");
-    matches.forEach((item) => partNumbers.add(item));
-    updateList();
+    const setToUpdate = isA ? partNumbersA : partNumbersB;
+    matches.forEach((item) => setToUpdate.add(item));
+    updateList(listElement, emptyElement, exportElement, setToUpdate);
+    updateComparison();
 
     setStatus(
+      statusElement,
       matches.length
         ? `Scan complete. Found ${matches.length} matches.`
         : "Scan complete. No matches found; try adjusting the pattern."
     );
   } catch (error) {
     console.error(error);
-    setStatus("OCR failed. Please try another file or refresh the page.");
+    setStatus(statusElement, "OCR failed. Please try another file or refresh the page.");
   } finally {
     scanButton.disabled = false;
   }
-});
+};
+
+scanButtonA.addEventListener("click", () => runScan("A"));
+scanButtonB.addEventListener("click", () => runScan("B"));
 
 copyButton.addEventListener("click", async () => {
-  if (!exportArea.value) {
-    setStatus("No part numbers to copy.");
+  if (!comparisonExport.value) {
+    setStatus(statusA, "No comparison to copy.");
+    setStatus(statusB, "No comparison to copy.");
     return;
   }
   try {
-    await navigator.clipboard.writeText(exportArea.value);
-    setStatus("Copied list to clipboard.");
+    await navigator.clipboard.writeText(comparisonExport.value);
+    setStatus(statusA, "Copied comparison to clipboard.");
+    setStatus(statusB, "Copied comparison to clipboard.");
   } catch (error) {
-    setStatus("Copy failed. You can select the list manually.");
+    setStatus(statusA, "Copy failed. You can select the list manually.");
+    setStatus(statusB, "Copy failed. You can select the list manually.");
   }
 });
 
 clearButton.addEventListener("click", () => {
-  partNumbers = new Set();
-  updateList();
-  setStatus("Cleared list.");
+  partNumbersA = new Set();
+  partNumbersB = new Set();
+  currentFileA = null;
+  currentFileB = null;
+  pdfCanvasA = null;
+  pdfCanvasB = null;
+  previewA.innerHTML = "<p>No file loaded yet.</p>";
+  previewB.innerHTML = "<p>No file loaded yet.</p>";
+  updateList(partListA, emptyStateA, exportA, partNumbersA);
+  updateList(partListB, emptyStateB, exportB, partNumbersB);
+  updateComparison();
+  setStatus(statusA, "Cleared list A.");
+  setStatus(statusB, "Cleared list B.");
 });
 
-updateList();
+updateList(partListA, emptyStateA, exportA, partNumbersA);
+updateList(partListB, emptyStateB, exportB, partNumbersB);
+updateComparison();

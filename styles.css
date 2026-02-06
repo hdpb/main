@@ -99,6 +99,18 @@ h1 {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
+.upload-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.upload-column {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
 .preview-card {
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -158,6 +170,10 @@ h1 {
   gap: 18px;
   grid-template-columns: 1fr auto;
   align-items: end;
+}
+
+.pattern-controls {
+  grid-template-columns: 1fr;
 }
 
 .controls input {
@@ -223,6 +239,12 @@ button.ghost {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.comparison-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
 textarea {
