@@ -39,6 +39,9 @@ const updateList = () => {
   exportArea.value = items.join("\n");
 };
 
+const isPdfFile = (file) =>
+  file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+
 const renderPdfPreview = async (file) => {
   if (!window.pdfjsLib) {
     preview.textContent = "PDF preview unavailable. PDF.js failed to load.";
@@ -46,7 +49,12 @@ const renderPdfPreview = async (file) => {
   }
 
   const data = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data }).promise;
+  let pdf;
+  try {
+    pdf = await pdfjsLib.getDocument({ data }).promise;
+  } catch (error) {
+    pdf = await pdfjsLib.getDocument({ data, disableWorker: true }).promise;
+  }
   const page = await pdf.getPage(1);
   const viewport = page.getViewport({ scale: 1.6 });
   const canvas = document.createElement("canvas");
@@ -64,7 +72,7 @@ const loadPreview = async (file) => {
     return;
   }
 
-  if (file.type === "application/pdf") {
+  if (isPdfFile(file)) {
     const placeholder = document.createElement("div");
     placeholder.className = "placeholder";
     placeholder.textContent = "Rendering PDF preview...";
@@ -79,6 +87,7 @@ const loadPreview = async (file) => {
     } catch (error) {
       console.error(error);
       preview.textContent = "Unable to render PDF preview.";
+      setStatus("PDF preview failed. If you opened this via file://, use a local server.");
     }
     return;
   }
@@ -156,7 +165,7 @@ scanButton.addEventListener("click", async () => {
 
   try {
     let source = currentFile;
-    if (currentFile.type === "application/pdf") {
+    if (isPdfFile(currentFile)) {
       if (!pdfCanvas) {
         pdfCanvas = await renderPdfPreview(currentFile);
       }
