@@ -16,11 +16,13 @@ let pdfCanvas = null;
 
 const pdfJsSources = [
   "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/build/pdf.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.js",
   "https://unpkg.com/pdfjs-dist@4.2.67/build/pdf.min.js",
 ];
 
 const pdfWorkerSources = [
   "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/build/pdf.worker.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.js",
   "https://unpkg.com/pdfjs-dist@4.2.67/build/pdf.worker.min.js",
 ];
 
