@@ -31,6 +31,8 @@ let partNumbersA = new Set();
 let partNumbersB = new Set();
 let pdfCanvasA = null;
 let pdfCanvasB = null;
+let previewBlobUrlA = null;
+let previewBlobUrlB = null;
 
 const pdfJsSources = [
   "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/build/pdf.min.js",
@@ -181,7 +183,20 @@ const renderPdfPreview = async (file, previewElement, statusElement) => {
   return canvas;
 };
 
-const loadPreview = async (file, previewElement, statusElement) => {
+const clearPreviewBlob = (slot) => {
+  const currentUrl = slot === "A" ? previewBlobUrlA : previewBlobUrlB;
+  if (currentUrl) {
+    URL.revokeObjectURL(currentUrl);
+    if (slot === "A") {
+      previewBlobUrlA = null;
+    } else {
+      previewBlobUrlB = null;
+    }
+  }
+};
+
+const loadPreview = async (file, previewElement, statusElement, slot) => {
+  clearPreviewBlob(slot);
   previewElement.innerHTML = "";
   if (!file) {
     previewElement.textContent = "No file loaded yet.";
@@ -189,6 +204,18 @@ const loadPreview = async (file, previewElement, statusElement) => {
   }
 
   if (isPdfFile(file)) {
+    const pdfUrl = URL.createObjectURL(file);
+    if (slot === "A") {
+      previewBlobUrlA = pdfUrl;
+    } else {
+      previewBlobUrlB = pdfUrl;
+    }
+    const embed = document.createElement("embed");
+    embed.src = pdfUrl;
+    embed.type = "application/pdf";
+    embed.className = "pdf-embed";
+    previewElement.appendChild(embed);
+
     const placeholder = document.createElement("div");
     placeholder.className = "placeholder";
     placeholder.textContent = "Rendering PDF preview...";
@@ -241,7 +268,7 @@ const extractPartNumbers = (text) => {
 const handleFile = async (file, slot) => {
   if (slot === "A") {
     currentFileA = file;
-    const result = await loadPreview(file, previewA, statusA);
+    const result = await loadPreview(file, previewA, statusA, "A");
     pdfCanvasA = result.canvas;
     if (result.pdfAttempted && !result.canvas) {
       setStatus(
@@ -253,7 +280,7 @@ const handleFile = async (file, slot) => {
     }
   } else {
     currentFileB = file;
-    const result = await loadPreview(file, previewB, statusB);
+    const result = await loadPreview(file, previewB, statusB, "B");
     pdfCanvasB = result.canvas;
     if (result.pdfAttempted && !result.canvas) {
       setStatus(
@@ -341,7 +368,12 @@ const runScan = async (slot) => {
     if (isPdfFile(currentFile)) {
       let pdfCanvas = isA ? pdfCanvasA : pdfCanvasB;
       if (!pdfCanvas) {
-        const result = await loadPreview(currentFile, previewElement, statusElement);
+        const result = await loadPreview(
+          currentFile,
+          previewElement,
+          statusElement,
+          isA ? "A" : "B"
+        );
         pdfCanvas = result.canvas;
         if (isA) {
           pdfCanvasA = result.canvas;
@@ -351,6 +383,11 @@ const runScan = async (slot) => {
       }
       if (pdfCanvas) {
         source = pdfCanvas;
+      } else {
+        setStatus(
+          statusElement,
+          "PDF preview shown, but OCR needs PDF.js. Please check network access."
+        );
       }
     }
 
@@ -413,6 +450,8 @@ clearButton.addEventListener("click", () => {
   pdfCanvasB = null;
   previewA.innerHTML = "<p>No file loaded yet.</p>";
   previewB.innerHTML = "<p>No file loaded yet.</p>";
+  clearPreviewBlob("A");
+  clearPreviewBlob("B");
   updateList(partListA, emptyStateA, exportA, partNumbersA);
   updateList(partListB, emptyStateB, exportB, partNumbersB);
   updateComparison();

@@ -144,6 +144,12 @@ h1 {
   object-fit: contain;
 }
 
+.pdf-embed {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
 .results {
   flex: 1;
   display: flex;
